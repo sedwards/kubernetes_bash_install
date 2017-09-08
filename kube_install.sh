@@ -83,32 +83,46 @@ EOF
 }
 
 MASTER="master"
-MINION="minion"
+MINION1="minion1"
+MINION2="minion2"
 REMOVE="remove"
 
 if [ "$1" == "$MASTER" ]
 then
     echo master passed as argument
+    install_common
 fi
 
-if [ "$1" == "$MINION" ]
+if [ "$1" == "$MINION1" ]
 then
     echo minion passed as argument
+    install_common
+fi
+
+if [ "$1" == "$MINION2" ]
+then
+    echo minion passed as argument
+    install_common
 fi
 
 if [ "$1" == "$REMOVE" ]
 then
     echo remove passed as argument
+    remove_common
 fi
 
 if [ $# -ne 1 ]; then
+    echo -e ###########################################
     echo usage: $0 options
-    echo Where options is one of 'master', 'minon' or 'remove'
+    echo -e ###########################################
+    echo Where options is one of 'master', 'minon1', 'minion2' or 'remove'
+    echo -e ###########################################
     echo Example:
     echo kube_install.sh master
+    echo -e ###########################################
     exit 1
 fi
 
-name=$1
+#name=$1
 
 
