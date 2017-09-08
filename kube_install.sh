@@ -160,6 +160,7 @@ then
     echo minion passed as argument
     install_common
     setup_minion1
+    start_minion
 fi
 
 if [ "$1" == "$MINION2" ]
@@ -167,11 +168,20 @@ then
     echo minion passed as argument
     install_common
     setup_minion2
+    start_minion
 fi
 
 if [ "$1" == "$REMOVE" ]
 then
     echo remove passed as argument
+    systemctl stop kube-apiserver
+    systemctl stop kube-controller-manager
+    systemctl stop kube-scheduler
+    systemctl stop kube-scheduler
+    systemctl stop flanneld
+    systemctl stop kube-proxy
+    systemctl stop kubelet
+    systemctl stop docker
     remove_common
 fi
 
