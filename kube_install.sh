@@ -1,5 +1,8 @@
 #!/bin/sh
 
+MASTER=172.16.100.174
+MINION1=172.16.100.175
+MINION2=172.16.100.176$
 
 install_common (){
   ###
@@ -22,7 +25,7 @@ EOF
 cat << EOF > /etc/kubernetes/config
 
 # Comma separated list of nodes running etcd cluster
-KUBE_ETCD_SERVERS="--etcd-servers=http://172.16.0.1:2379"
+KUBE_ETCD_SERVERS="--etcd-servers=http://$MASTER:2379"
 # Logging will be stored in system journal
 KUBE_LOGTOSTDERR="--logtostderr=true"
 # Journal message level, 0 is debug
@@ -30,7 +33,7 @@ KUBE_LOG_LEVEL="--v=0"
 # Should this cluster be allowed to run privileged docker containers
 KUBE_ALLOW_PRIV="--allow-privileged=false"
 # Api-server endpoint used in scheduler and controller-manager
-KUBE_MASTER="--master=http://172.16.0.1:8080"
+KUBE_MASTER="--master=http://$MASTER:8080"
 EOF
 }
 
@@ -61,7 +64,7 @@ EOF
 
   ### Generate CA Cert 
   ### FIXME: Variables
-  bash make-ca-cert.sh "172.16.0.1" "IP:172.16.0.1,IP:10.254.0.1,DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc,DNS:kubernetes.default.svc.cluster.local"
+  bash make-ca-cert.sh "$MASTER" "IP:$MASTER,IP:10.254.0.1,DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc,DNS:kubernetes.default.svc.cluster.local"
 
   ### apiserver configuration
   ### 
@@ -94,9 +97,9 @@ KUBELET_ADDRESS="--address=0.0.0.0"
 # port on which kubelet listen
 KUBELET_PORT="--port=10250"
 # leave this blank to use the hostname of server
-KUBELET_HOSTNAME="--hostname-override=172.16.0.2"
+KUBELET_HOSTNAME="--hostname-override=$MINION1"
 # Location of the api-server
-KUBELET_API_SERVER="--api-servers=http://172.16.0.1:8080"
+KUBELET_API_SERVER="--api-servers=http://$MASTER:8080"
 # Add your own!
 KUBELET_ARGS=""
 EOF
@@ -109,9 +112,9 @@ KUBELET_ADDRESS="--address=0.0.0.0"
 # port on which kubelet listen
 KUBELET_PORT="--port=10250"
 # leave this blank to use the hostname of server
-KUBELET_HOSTNAME="--hostname-override=172.16.0.3"
+KUBELET_HOSTNAME="--hostname-override=$MINION2"
 # Location of the api-server
-KUBELET_API_SERVER="--api-servers=http://172.16.0.1:8080"
+KUBELET_API_SERVER="--api-servers=http://$MASTER:8080"
 # Add your own!
 KUBELET_ARGS=""
 EOF
@@ -120,7 +123,7 @@ EOF
 setup_flanneld () {
 cat > /etc/sysconfig/flanneld << EOF
 # etcd URL location.  Point this to the server where etcd runs
-FLANNEL_ETCD="http://172.16.0.1:2379"
+FLANNEL_ETCD="http://$MASTER:2379"
 # etcd config key.  This is the configuration key that flannel queries
 # For address range assignment
 FLANNEL_ETCD_PREFIX="/kube-centos/network"
