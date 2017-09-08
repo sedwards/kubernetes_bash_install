@@ -38,6 +38,11 @@ remove_common(){
   yum remove -y kubernetes etcd flannel 
   rm /etc/kubernetes/config
   rm /etc/yum.repos.d/virt7-docker-common-release.repo 
+  rm /etc/etcd/etcd.conf 
+  rm /etc/sysconfig/flanneld
+  rm /etc/kubernetes/apiserver
+  rm /srv/kubernetes/server.cert
+  rm /srv/kubernetes/server.key 
 }
 
 setup_etcd_master (){
@@ -83,7 +88,7 @@ EOF
 }
 
 setup_minion1 () {
-cat /etc/kubernetes/kubelet  << EOF
+cat > /etc/kubernetes/kubelet  << EOF
 # kubelet bind ip address(Provide private ip of minion)
 KUBELET_ADDRESS="--address=0.0.0.0"
 # port on which kubelet listen
@@ -98,7 +103,7 @@ EOF
 }
 
 setup_minion2 () {
-cat /etc/kubernetes/kubelet  << EOF
+cat > /etc/kubernetes/kubelet  << EOF
 # kubelet bind ip address(Provide private ip of minion)
 KUBELET_ADDRESS="--address=0.0.0.0"
 # port on which kubelet listen
@@ -112,7 +117,19 @@ KUBELET_ARGS=""
 EOF
 }
 
-start_master (){
+setup_flanneld () {
+cat > /etc/sysconfig/flanneld << EOF
+# etcd URL location.  Point this to the server where etcd runs
+FLANNEL_ETCD="http://172.16.0.1:2379"
+# etcd config key.  This is the configuration key that flannel queries
+# For address range assignment
+FLANNEL_ETCD_PREFIX="/kube-centos/network"
+# Any additional options that you want to pass
+FLANNEL_OPTIONS=""
+EOF
+}
+
+start_master () {
   systemctl enable kube-apiserver
   systemctl start kube-apiserver
   systemctl enable kube-controller-manager
@@ -152,6 +169,7 @@ then
     etcdctl mkdir /kube-centos/network
     ### allocates the 172.30.0.0/16 subnet to the Flannel network
     etcdctl mk /kube-centos/network/config "{ \"Network\": \"172.30.0.0/16\", \"SubnetLen\": 24, \"Backend\": { \"Type\": \"vxlan\" } }"
+    setup_flanneld
     start_master
 fi
 
@@ -160,6 +178,7 @@ then
     echo minion passed as argument
     install_common
     setup_minion1
+    setup_flanneld
     start_minion
 fi
 
@@ -168,6 +187,7 @@ then
     echo minion passed as argument
     install_common
     setup_minion2
+    setup_flanneld
     start_minion
 fi
 
