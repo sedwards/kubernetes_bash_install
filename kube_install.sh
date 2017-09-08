@@ -18,7 +18,7 @@ EOF
   ###
   ### Install Packages ###
   ###
-  yum -y install --enablerepo=virt7-docker-common-release kubernetes etcd flannel
+  yum -y reinstall --enablerepo=virt7-docker-common-release kubernetes etcd flannel
 
   ### Setup Kube Config ###
   ### FIXME: Variables
