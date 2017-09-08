@@ -35,6 +35,14 @@ KUBE_ALLOW_PRIV="--allow-privileged=false"
 # Api-server endpoint used in scheduler and controller-manager
 KUBE_MASTER="--master=http://$MASTER:8080"
 EOF
+
+cat << EOF > /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+172.16.100.174	master
+172.16.100.175  minion1
+172.16.100.176  minion2
+EOF
 }
 
 remove_common(){
