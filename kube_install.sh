@@ -82,6 +82,62 @@ KUBE_CONTROLLER_MANAGER_ARGS="--root-ca-file=/srv/kubernetes/ca.crt --service-ac
 EOF
 }
 
+setup_minion1 () {
+cat /etc/kubernetes/kubelet  << EOF
+# kubelet bind ip address(Provide private ip of minion)
+KUBELET_ADDRESS="--address=0.0.0.0"
+# port on which kubelet listen
+KUBELET_PORT="--port=10250"
+# leave this blank to use the hostname of server
+KUBELET_HOSTNAME="--hostname-override=172.16.0.2"
+# Location of the api-server
+KUBELET_API_SERVER="--api-servers=http://172.16.0.1:8080"
+# Add your own!
+KUBELET_ARGS=""
+EOF
+}
+
+setup_minion2 () {
+cat /etc/kubernetes/kubelet  << EOF
+# kubelet bind ip address(Provide private ip of minion)
+KUBELET_ADDRESS="--address=0.0.0.0"
+# port on which kubelet listen
+KUBELET_PORT="--port=10250"
+# leave this blank to use the hostname of server
+KUBELET_HOSTNAME="--hostname-override=172.16.0.3"
+# Location of the api-server
+KUBELET_API_SERVER="--api-servers=http://172.16.0.1:8080"
+# Add your own!
+KUBELET_ARGS=""
+EOF
+}
+
+start_master (){
+  systemctl enable kube-apiserver
+  systemctl start kube-apiserver
+  systemctl enable kube-controller-manager
+  systemctl start kube-controller-manager
+  systemctl start kube-scheduler
+  systemctl start kube-scheduler
+  systemctl enable flanneld
+  systemctl start flanneld
+}
+
+start_minion ()
+{
+  systemctl enable kube-proxy
+  systemctl start kube-proxy
+  systemctl enable kubelet
+  systemctl start kubelet
+  systemctl enable flanneld
+  systemctl start flanneld
+  systemctl enable docker
+  systemctl start docker
+}
+
+###########################################
+## Main
+
 MASTER="master"
 MINION1="minion1"
 MINION2="minion2"
@@ -91,18 +147,26 @@ if [ "$1" == "$MASTER" ]
 then
     echo master passed as argument
     install_common
+    setup_etcd_master
+    systemctl start etcd
+    etcdctl mkdir /kube-centos/network
+    ### allocates the 172.30.0.0/16 subnet to the Flannel network
+    etcdctl mk /kube-centos/network/config "{ \"Network\": \"172.30.0.0/16\", \"SubnetLen\": 24, \"Backend\": { \"Type\": \"vxlan\" } }"
+    start_master
 fi
 
 if [ "$1" == "$MINION1" ]
 then
     echo minion passed as argument
     install_common
+    setup_minion1
 fi
 
 if [ "$1" == "$MINION2" ]
 then
     echo minion passed as argument
     install_common
+    setup_minion2
 fi
 
 if [ "$1" == "$REMOVE" ]
@@ -123,6 +187,5 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-#name=$1
-
+#EOF
 
